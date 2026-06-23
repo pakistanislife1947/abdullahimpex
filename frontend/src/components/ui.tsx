@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { Search } from 'lucide-react';
+import { Search, LucideIcon } from 'lucide-react';
 
 export function PageHeader({
   title,
@@ -11,12 +11,12 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="flex items-start justify-between border-b border-line bg-surface px-8 py-6">
+    <div className="flex flex-col gap-4 border-b border-line bg-surface px-5 py-5 sm:flex-row sm:items-start sm:justify-between sm:px-8 sm:py-6">
       <div>
-        <h1 className="font-display text-xl font-bold">{title}</h1>
+        <h1 className="font-display text-lg font-bold sm:text-xl">{title}</h1>
         {subtitle && <p className="mt-1 text-sm text-ink-muted">{subtitle}</p>}
       </div>
-      {action}
+      {action && <div className="shrink-0">{action}</div>}
     </div>
   );
 }
@@ -31,7 +31,7 @@ export function SearchInput({
   placeholder?: string;
 }) {
   return (
-    <div className="relative w-72">
+    <div className="relative w-full sm:w-72">
       <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-ink-faint" />
       <input
         className="input pl-9"
@@ -48,15 +48,24 @@ export function StatCard({
   value,
   hint,
   tone = 'default',
+  icon: Icon,
 }: {
   label: string;
   value: string;
   hint?: string;
   tone?: 'default' | 'warning';
+  icon?: LucideIcon;
 }) {
   return (
     <div className="card p-5">
-      <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">{label}</p>
+        {Icon && (
+          <span className={`rounded-md p-1.5 ${tone === 'warning' ? 'bg-danger-tint text-danger' : 'bg-accent-tint text-accent-dark'}`}>
+            <Icon size={14} />
+          </span>
+        )}
+      </div>
       <p className={`mt-2 font-mono text-2xl font-semibold tabular-nums ${tone === 'warning' ? 'text-danger' : 'text-ink'}`}>
         {value}
       </p>

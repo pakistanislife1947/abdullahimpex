@@ -62,7 +62,7 @@ function CustomerForm({
         <label className="label">Customer / company name</label>
         <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Contact person</label>
           <input className="input" value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} />
@@ -72,7 +72,7 @@ function CustomerForm({
           <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">NTN</label>
           <input className="input font-mono" value={form.ntn} onChange={(e) => setForm({ ...form, ntn: e.target.value })} />
@@ -144,7 +144,7 @@ export default function Customers() {
           </button>
         }
       />
-      <div className="px-8 py-6">
+      <div className="px-5 py-6 sm:px-8">
         <SearchInput value={search} onChange={setSearch} placeholder="Search customers…" />
         <div className="card mt-4">
           {loading ? (
@@ -152,7 +152,8 @@ export default function Customers() {
           ) : items.length === 0 ? (
             <EmptyState title="No customers yet" hint="Add your first customer to start recording sales." />
           ) : (
-            <table className="table-shell">
+            <div className="overflow-x-auto">
+              <table className="table-shell">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -181,6 +182,7 @@ export default function Customers() {
                 ))}
               </tbody>
             </table>
+              </div>
           )}
         </div>
       </div>

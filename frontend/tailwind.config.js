@@ -10,7 +10,7 @@ export default {
         line: '#E5E5E5',
         'line-strong': '#D0D0D0',
         surface: '#FFFFFF',
-        canvas: '#FAFAFA',
+        canvas: '#F7F5F2',
         accent: {
           DEFAULT: '#1B8FA8',
           dark: '#156D82',

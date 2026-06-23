@@ -73,7 +73,7 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
             <label className="label">Name</label>
             <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label">NTN</label>
               <input className="input font-mono" value={form.ntn ?? ''} onChange={(e) => setForm({ ...form, ntn: e.target.value })} />
@@ -83,7 +83,7 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
               <input className="input font-mono" value={form.strn ?? ''} onChange={(e) => setForm({ ...form, strn: e.target.value })} />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div>
               <label className="label">Phone</label>
               <input className="input" value={form.phone ?? ''} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
@@ -183,7 +183,7 @@ function BackupExport() {
               ))}
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
               <label className="label">Tenure from (optional)</label>
               <input type="date" className="input" value={from} onChange={(e) => setFrom(e.target.value)} />
@@ -226,13 +226,13 @@ export default function Settings() {
   return (
     <div>
       <PageHeader title="Settings" subtitle="Company profiles and data backup." />
-      <div className="space-y-6 px-8 py-6">
+      <div className="space-y-6 px-5 py-6 sm:px-8">
         <div>
           <h2 className="mb-3 font-display text-sm font-bold text-ink-muted">Company profiles</h2>
           {loading ? (
             <p className="text-sm text-ink-muted">Loading…</p>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               {companies.map((c) => (
                 <CompanyCard key={c.id} company={c} onSaved={load} />
               ))}

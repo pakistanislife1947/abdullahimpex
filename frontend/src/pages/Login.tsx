@@ -13,6 +13,35 @@ function CrescentMark({ className }: { className?: string }) {
   );
 }
 
+// An original, abstract "spinning bobbin" motif tiled as a dim background
+// pattern — nods to the spinning-machinery business without using any
+// photo/stock imagery (keeps things lightweight and licence-free).
+function ThreadPattern() {
+  return (
+    <svg className="absolute inset-0 h-full w-full text-white/[0.05]" preserveAspectRatio="xMidYMid slice">
+      <defs>
+        <pattern id="bobbin" width="120" height="120" patternUnits="userSpaceOnUse">
+          <circle cx="60" cy="60" r="34" fill="none" stroke="currentColor" strokeWidth="1.4" />
+          <circle cx="60" cy="60" r="24" fill="none" stroke="currentColor" strokeWidth="1" />
+          <circle cx="60" cy="60" r="3" fill="currentColor" />
+          {[0, 45, 90, 135].map((deg) => (
+            <line
+              key={deg}
+              x1="60"
+              y1="60"
+              x2={60 + 34 * Math.cos((deg * Math.PI) / 180)}
+              y2={60 + 34 * Math.sin((deg * Math.PI) / 180)}
+              stroke="currentColor"
+              strokeWidth="0.75"
+            />
+          ))}
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#bobbin)" />
+    </svg>
+  );
+}
+
 export default function Login() {
   const { session, signIn, loading } = useAuth();
   const [email, setEmail] = useState('');
@@ -32,16 +61,17 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 flex-col justify-between overflow-hidden bg-ink p-12 text-white lg:flex">
-        <CrescentMark className="pointer-events-none absolute -bottom-24 -left-20 h-[420px] w-[420px] text-white/[0.05]" />
-        <CrescentMark className="pointer-events-none absolute -top-16 right-0 h-64 w-64 text-white/[0.04]" />
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      <div className="relative flex flex-col justify-between overflow-hidden bg-ink px-8 py-10 text-white lg:w-1/2 lg:px-12 lg:py-12">
+        <ThreadPattern />
+        <CrescentMark className="pointer-events-none absolute -bottom-24 -left-20 h-[420px] w-[420px] text-white/[0.06]" />
+        <CrescentMark className="pointer-events-none absolute -top-16 right-0 h-64 w-64 text-white/[0.05]" />
         <div className="relative z-10">
           <p className="font-display text-2xl font-bold">M Riaz Trading</p>
           <p className="mt-1 text-sm text-white/50">Spinning machinery parts &amp; trading</p>
         </div>
-        <div className="relative z-10 max-w-sm">
-          <p className="font-display text-3xl font-semibold leading-snug">
+        <div className="relative z-10 mt-10 max-w-sm lg:mt-0">
+          <p className="font-display text-2xl font-semibold leading-snug lg:text-3xl">
             Stock, sales, and billing — in one place, for both your companies.
           </p>
           <p className="mt-4 text-sm text-white/50">
@@ -50,7 +80,7 @@ export default function Login() {
         </div>
       </div>
 
-      <div className="flex w-full flex-1 items-center justify-center bg-surface px-6 lg:w-1/2">
+      <div className="flex w-full flex-1 items-center justify-center bg-surface px-6 py-12 lg:w-1/2">
         <div className="w-full max-w-sm">
           <h1 className="font-display text-2xl font-bold">Sign in</h1>
           <p className="mt-1 text-sm text-ink-muted">Admin access only.</p>

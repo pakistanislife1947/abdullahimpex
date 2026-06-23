@@ -82,7 +82,7 @@ function StockForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Item code</label>
           <input className="input font-mono" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} required />
@@ -102,7 +102,7 @@ function StockForm({
         <label className="label">Product name</label>
         <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Size / dimensions</label>
           <input
@@ -124,7 +124,7 @@ function StockForm({
           />
         </div>
       </div>
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div>
           <label className="label">Purchase rate</label>
           <input
@@ -224,7 +224,7 @@ export default function Stock() {
           </button>
         }
       />
-      <div className="px-8 py-6">
+      <div className="px-5 py-6 sm:px-8">
         <SearchInput value={search} onChange={setSearch} placeholder="Search by code, name, or size…" />
 
         <div className="card mt-4">
@@ -233,7 +233,8 @@ export default function Stock() {
           ) : items.length === 0 ? (
             <EmptyState title="No stock items found" hint="Try a different search, or add a new item." />
           ) : (
-            <table className="table-shell">
+            <div className="overflow-x-auto">
+              <table className="table-shell">
               <thead>
                 <tr>
                   <th>Code</th>
@@ -278,6 +279,7 @@ export default function Stock() {
                 })}
               </tbody>
             </table>
+              </div>
           )}
         </div>
       </div>

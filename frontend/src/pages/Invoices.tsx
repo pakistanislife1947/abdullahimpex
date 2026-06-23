@@ -63,7 +63,7 @@ export default function Invoices() {
           </Link>
         }
       />
-      <div className="px-8 py-6">
+      <div className="px-5 py-6 sm:px-8">
         <div className="flex items-end gap-3">
           <div>
             <label className="label">From</label>
@@ -92,7 +92,8 @@ export default function Invoices() {
           ) : items.length === 0 ? (
             <EmptyState title="No invoices found" hint="Create a new invoice, or widen your date range." />
           ) : (
-            <table className="table-shell">
+            <div className="overflow-x-auto">
+              <table className="table-shell">
               <thead>
                 <tr>
                   <th>Serial #</th>
@@ -120,6 +121,7 @@ export default function Invoices() {
                 ))}
               </tbody>
             </table>
+              </div>
           )}
         </div>
       </div>

@@ -60,7 +60,7 @@ function SupplierForm({
         <label className="label">Supplier name</label>
         <input className="input" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Contact person</label>
           <input className="input" value={form.contact_person} onChange={(e) => setForm({ ...form, contact_person: e.target.value })} />
@@ -70,7 +70,7 @@ function SupplierForm({
           <input className="input" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} />
         </div>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Email</label>
           <input type="email" className="input" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -142,7 +142,7 @@ export default function Suppliers() {
           </button>
         }
       />
-      <div className="px-8 py-6">
+      <div className="px-5 py-6 sm:px-8">
         <SearchInput value={search} onChange={setSearch} placeholder="Search suppliers…" />
         <div className="card mt-4">
           {loading ? (
@@ -150,7 +150,8 @@ export default function Suppliers() {
           ) : items.length === 0 ? (
             <EmptyState title="No suppliers yet" hint="Add your first supplier to start recording purchases." />
           ) : (
-            <table className="table-shell">
+            <div className="overflow-x-auto">
+              <table className="table-shell">
               <thead>
                 <tr>
                   <th>Name</th>
@@ -179,6 +180,7 @@ export default function Suppliers() {
                 ))}
               </tbody>
             </table>
+              </div>
           )}
         </div>
       </div>

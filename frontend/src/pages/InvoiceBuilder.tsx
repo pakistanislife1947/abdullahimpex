@@ -165,10 +165,10 @@ export default function InvoiceBuilder() {
   return (
     <div>
       <PageHeader title="New invoice" subtitle="Choose which company this invoice is issued under." />
-      <form onSubmit={handleSubmit} className="px-8 py-6">
+      <form onSubmit={handleSubmit} className="px-5 py-6 sm:px-8">
         <div className="card p-5">
           <h3 className="mb-4 font-display text-sm font-bold">Company profile</h3>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3">
             {companies.map((c) => (
               <button
                 key={c.id}
@@ -187,8 +187,8 @@ export default function InvoiceBuilder() {
 
         <div className="card mt-4 p-5">
           <h3 className="mb-4 font-display text-sm font-bold">Buyer &amp; tenure</h3>
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col-span-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="sm:col-span-2">
               <label className="label">Customer</label>
               <SearchableSelect
                 value={customerId}
@@ -202,7 +202,7 @@ export default function InvoiceBuilder() {
               <input type="date" className="input" value={invoiceDate} onChange={(e) => setInvoiceDate(e.target.value)} />
             </div>
           </div>
-          <div className="mt-4 grid grid-cols-4 gap-4">
+          <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-4">
             <div>
               <label className="label">Period start (tenure)</label>
               <input type="date" className="input" value={periodStart} onChange={(e) => setPeriodStart(e.target.value)} />
@@ -211,8 +211,8 @@ export default function InvoiceBuilder() {
               <label className="label">Period end (tenure)</label>
               <input type="date" className="input" value={periodEnd} onChange={(e) => setPeriodEnd(e.target.value)} />
             </div>
-            <div className="col-span-2 flex items-end">
-              <button type="button" className="btn-secondary" disabled={pulling} onClick={pullUnbilledSales}>
+            <div className="flex items-end sm:col-span-2">
+              <button type="button" className="btn-secondary w-full sm:w-auto" disabled={pulling} onClick={pullUnbilledSales}>
                 {pulling ? 'Pulling…' : 'Pull un-invoiced sales for this period'}
               </button>
             </div>
@@ -221,23 +221,23 @@ export default function InvoiceBuilder() {
 
         <div className="card mt-4 p-5">
           <h3 className="mb-4 font-display text-sm font-bold">Line items</h3>
-          <div className="space-y-2">
+          <div className="space-y-3">
             {items.map((item, idx) => (
-              <div key={idx} className="grid grid-cols-12 gap-2">
+              <div key={idx} className="grid grid-cols-2 gap-2 rounded-md border border-line p-3 sm:grid-cols-12 sm:border-0 sm:p-0">
                 <input
-                  className="input col-span-3"
+                  className="input col-span-2 sm:col-span-3"
                   placeholder="Product name"
                   value={item.product_name}
                   onChange={(e) => updateItem(idx, { product_name: e.target.value })}
                 />
                 <input
-                  className="input col-span-2 font-mono"
+                  className="input font-mono sm:col-span-2"
                   placeholder="Size"
                   value={item.size}
                   onChange={(e) => updateItem(idx, { size: e.target.value })}
                 />
                 <input
-                  className="input col-span-1"
+                  className="input sm:col-span-1"
                   placeholder="Unit"
                   value={item.unit}
                   onChange={(e) => updateItem(idx, { unit: e.target.value })}
@@ -245,7 +245,7 @@ export default function InvoiceBuilder() {
                 <input
                   type="number"
                   step="0.01"
-                  className="input col-span-1"
+                  className="input sm:col-span-1"
                   placeholder="Qty"
                   value={item.quantity}
                   onChange={(e) => updateItem(idx, { quantity: e.target.value })}
@@ -253,7 +253,7 @@ export default function InvoiceBuilder() {
                 <input
                   type="number"
                   step="0.01"
-                  className="input col-span-2"
+                  className="input sm:col-span-2"
                   placeholder="Rate"
                   value={item.rate}
                   onChange={(e) => updateItem(idx, { rate: e.target.value })}
@@ -261,17 +261,17 @@ export default function InvoiceBuilder() {
                 <input
                   type="number"
                   step="0.01"
-                  className="input col-span-1"
+                  className="input sm:col-span-1"
                   placeholder="S.T %"
                   value={item.tax_rate}
                   onChange={(e) => updateItem(idx, { tax_rate: e.target.value })}
                 />
                 <button
                   type="button"
-                  className="btn-ghost col-span-2 hover:text-danger"
+                  className="btn-ghost col-span-2 justify-center hover:text-danger sm:col-span-2"
                   onClick={() => setItems((rows) => rows.filter((_, i) => i !== idx))}
                 >
-                  <Trash2 size={15} />
+                  <Trash2 size={15} /> <span className="sm:hidden">Remove</span>
                 </button>
               </div>
             ))}
@@ -281,7 +281,7 @@ export default function InvoiceBuilder() {
           </button>
         </div>
 
-        <div className="mt-4 flex items-center justify-between">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-sm text-ink-muted">
             Subtotal: <span className="data-num font-semibold text-ink">Rs. {money(subtotal)}</span> · Tax:{' '}
             <span className="data-num font-semibold text-ink">Rs. {money(taxTotal)}</span> · Grand total:{' '}

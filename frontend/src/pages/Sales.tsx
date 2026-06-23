@@ -94,7 +94,7 @@ function SaleForm({ onSaved, onClose }: { onSaved: () => void; onClose: () => vo
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
           <label className="label">Customer</label>
           <SearchableSelect
@@ -116,7 +116,7 @@ function SaleForm({ onSaved, onClose }: { onSaved: () => void; onClose: () => vo
           {rows.map((row, idx) => {
             const stock = stockOptions.find((s) => s.id === row.stock_id);
             return (
-              <div key={idx} className="flex items-start gap-2">
+              <div key={idx} className="flex flex-col gap-2 rounded-md border border-line p-3 sm:flex-row sm:items-start sm:border-0 sm:p-0">
                 <div className="flex-1">
                   <SearchableSelect
                     value={row.stock_id}
@@ -129,31 +129,33 @@ function SaleForm({ onSaved, onClose }: { onSaved: () => void; onClose: () => vo
                     placeholder="Search item by code or name…"
                   />
                 </div>
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Qty"
-                  className="input w-24"
-                  value={row.quantity}
-                  onChange={(e) => updateRow(idx, { quantity: e.target.value })}
-                />
-                <input
-                  type="number"
-                  step="0.01"
-                  placeholder="Rate"
-                  className="input w-28"
-                  value={row.rate}
-                  onChange={(e) => updateRow(idx, { rate: e.target.value })}
-                />
-                <button
-                  type="button"
-                  className="btn-ghost mt-1 px-2 hover:text-danger"
-                  onClick={() => setRows((rs) => rs.filter((_, i) => i !== idx))}
-                >
-                  <Trash2 size={15} />
-                </button>
+                <div className="flex gap-2">
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Qty"
+                    className="input w-full sm:w-24"
+                    value={row.quantity}
+                    onChange={(e) => updateRow(idx, { quantity: e.target.value })}
+                  />
+                  <input
+                    type="number"
+                    step="0.01"
+                    placeholder="Rate"
+                    className="input w-full sm:w-28"
+                    value={row.rate}
+                    onChange={(e) => updateRow(idx, { rate: e.target.value })}
+                  />
+                  <button
+                    type="button"
+                    className="btn-ghost shrink-0 px-2 hover:text-danger"
+                    onClick={() => setRows((rs) => rs.filter((_, i) => i !== idx))}
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
                 {stock && Number(row.quantity) > stock.quantity && (
-                  <p className="absolute mt-12 text-xs text-danger">Only {stock.quantity} available</p>
+                  <p className="text-xs text-danger sm:absolute sm:mt-12">Only {stock.quantity} available</p>
                 )}
               </div>
             );
@@ -217,14 +219,15 @@ export default function Sales() {
           </button>
         }
       />
-      <div className="px-8 py-6">
+      <div className="px-5 py-6 sm:px-8">
         <div className="card">
           {loading ? (
             <p className="px-5 py-10 text-center text-sm text-ink-muted">Loading…</p>
           ) : items.length === 0 ? (
             <EmptyState title="No sales recorded yet" hint="Record your first sale to a customer." />
           ) : (
-            <table className="table-shell">
+            <div className="overflow-x-auto">
+              <table className="table-shell">
               <thead>
                 <tr>
                   <th>Date</th>
@@ -248,6 +251,7 @@ export default function Sales() {
                 ))}
               </tbody>
             </table>
+              </div>
           )}
         </div>
       </div>
