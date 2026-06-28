@@ -58,6 +58,7 @@ const QUICK_ACTIONS = [
 export default function Dashboard() {
   const [summary, setSummary] = useState<Summary | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState<string | null>(null);
 
   useEffect(() => {
     api
@@ -68,6 +69,12 @@ export default function Dashboard() {
         setError(message);
         toast.error(message);
       });
+    api
+      .get<{ data: { email: string; full_name: string | null } }>('/me')
+      .then((res) => setName(res.data.full_name || res.data.email?.split('@')[0] || null))
+      .catch(() => {
+        /* Non-critical — greeting just falls back to no name. */
+      });
   }, []);
 
   const today = new Date().toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
@@ -75,7 +82,7 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader
-        title={`${greeting()}`}
+        title={name ? `${greeting()}, ${name}` : greeting()}
         subtitle={today}
         action={
           <div className="flex flex-wrap gap-2">

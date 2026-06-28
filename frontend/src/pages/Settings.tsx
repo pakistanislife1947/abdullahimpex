@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Download } from 'lucide-react';
+import { Download, User, KeyRound } from 'lucide-react';
 import { api, ApiClientError } from '../lib/api';
+import { supabase } from '../lib/supabaseClient';
 import { triggerBlobDownload } from '../lib/format';
 import { PageHeader } from '../components/ui';
 
@@ -203,6 +204,128 @@ function BackupExport() {
   );
 }
 
+function AccountSettings() {
+  const [email, setEmail] = useState('');
+  const [name, setName] = useState('');
+  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [savingName, setSavingName] = useState(false);
+
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  useEffect(() => {
+    api
+      .get<{ data: { email: string; full_name: string | null } }>('/me')
+      .then((res) => {
+        setEmail(res.data.email);
+        setName(res.data.full_name ?? '');
+      })
+      .catch((err) => toast.error(err instanceof ApiClientError ? err.message : 'Could not load your profile.'))
+      .finally(() => setLoadingProfile(false));
+  }, []);
+
+  async function saveName(e: React.FormEvent) {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('Name cannot be empty.');
+      return;
+    }
+    setSavingName(true);
+    try {
+      await api.put('/me', { full_name: name.trim() });
+      toast.success('Name updated.');
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : 'Could not update your name.');
+    } finally {
+      setSavingName(false);
+    }
+  }
+
+  async function changePassword(e: React.FormEvent) {
+    e.preventDefault();
+    if (newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters.');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match.');
+      return;
+    }
+    setChangingPassword(true);
+    // Password changes go straight through Supabase Auth from the browser —
+    // it never passes through our backend, so the new password is never
+    // seen anywhere except Supabase's own auth servers.
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    setChangingPassword(false);
+    if (error) {
+      toast.error(error.message);
+    } else {
+      toast.success('Password changed.');
+      setNewPassword('');
+      setConfirmPassword('');
+    }
+  }
+
+  return (
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <form onSubmit={saveName} className="card space-y-4 p-5">
+        <div className="flex items-center gap-2">
+          <User size={15} className="text-ink-muted" />
+          <h3 className="font-display text-sm font-bold">Your name</h3>
+        </div>
+        {loadingProfile ? (
+          <p className="text-sm text-ink-muted">Loading…</p>
+        ) : (
+          <>
+            <div>
+              <label className="label">Email</label>
+              <input className="input bg-canvas" value={email} disabled />
+            </div>
+            <div>
+              <label className="label">Display name</label>
+              <input className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Abdullah Shahid" />
+            </div>
+            <button type="submit" disabled={savingName} className="btn-primary">
+              {savingName ? 'Saving…' : 'Save name'}
+            </button>
+          </>
+        )}
+      </form>
+
+      <form onSubmit={changePassword} className="card space-y-4 p-5">
+        <div className="flex items-center gap-2">
+          <KeyRound size={15} className="text-ink-muted" />
+          <h3 className="font-display text-sm font-bold">Change password</h3>
+        </div>
+        <div>
+          <label className="label">New password</label>
+          <input
+            type="password"
+            className="input"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            minLength={8}
+          />
+        </div>
+        <div>
+          <label className="label">Confirm new password</label>
+          <input
+            type="password"
+            className="input"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            minLength={8}
+          />
+        </div>
+        <button type="submit" disabled={changingPassword} className="btn-primary">
+          {changingPassword ? 'Changing…' : 'Change password'}
+        </button>
+      </form>
+    </div>
+  );
+}
+
 export default function Settings() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
@@ -227,6 +350,11 @@ export default function Settings() {
     <div>
       <PageHeader title="Settings" subtitle="Company profiles and data backup." />
       <div className="space-y-6 px-5 py-6 sm:px-8">
+        <div>
+          <h2 className="mb-3 font-display text-sm font-bold text-ink-muted">Your account</h2>
+          <AccountSettings />
+        </div>
+
         <div>
           <h2 className="mb-3 font-display text-sm font-bold text-ink-muted">Company profiles</h2>
           {loading ? (

@@ -16,6 +16,7 @@ import invoicesRoutes from './routes/invoices';
 import companiesRoutes from './routes/companies';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
+import meRoutes from './routes/me';
 
 const app = express();
 
@@ -74,6 +75,7 @@ app.use('/invoices', invoicesRoutes);
 app.use('/companies', companiesRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/export', exportRoutes);
+app.use('/me', meRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -10,6 +10,7 @@ import Login from './pages/Login';
 // shell) light — this matters most on slower mobile connections.
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const Stock = lazy(() => import('./pages/Stock'));
+const StockDetail = lazy(() => import('./pages/StockDetail'));
 const Purchases = lazy(() => import('./pages/Purchases'));
 const Sales = lazy(() => import('./pages/Sales'));
 const Invoices = lazy(() => import('./pages/Invoices'));
@@ -47,6 +48,7 @@ export default function App() {
             <Route element={<ProtectedShell />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/stock" element={<Stock />} />
+              <Route path="/stock/:id" element={<StockDetail />} />
               <Route path="/purchases" element={<Purchases />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/invoices" element={<Invoices />} />

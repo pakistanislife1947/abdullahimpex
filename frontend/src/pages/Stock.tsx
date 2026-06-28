@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 import { api, ApiClientError } from '../lib/api';
-import { money } from '../lib/format';
+import { money, formatDate } from '../lib/format';
 import { PageHeader, SearchInput, EmptyState, Badge } from '../components/ui';
 import Modal from '../components/Modal';
 
@@ -16,7 +17,9 @@ interface StockItem {
   purchase_rate: number;
   sale_rate: number | null;
   description: string | null;
+  specification: string | null;
   low_stock_threshold: number | null;
+  created_at: string;
 }
 
 const UNITS = ['ft', 'set', 'nos', 'mtr'] as const;
@@ -40,6 +43,7 @@ function StockForm({
     purchase_rate: initial?.purchase_rate ?? 0,
     sale_rate: initial?.sale_rate ?? '',
     description: initial?.description ?? '',
+    specification: initial?.specification ?? '',
     low_stock_threshold: initial?.low_stock_threshold ?? 5,
   });
   const [saving, setSaving] = useState(false);
@@ -62,6 +66,7 @@ function StockForm({
       purchase_rate: Number(form.purchase_rate),
       sale_rate: form.sale_rate === '' ? null : Number(form.sale_rate),
       description: form.description || null,
+      specification: form.specification || null,
       low_stock_threshold: Number(form.low_stock_threshold),
     };
     try {
@@ -158,6 +163,16 @@ function StockForm({
         </div>
       </div>
       <div>
+        <label className="label">Specification (optional)</label>
+        <textarea
+          className="input"
+          rows={2}
+          placeholder="Technical specs — material, tolerance, compatibility, etc."
+          value={form.specification}
+          onChange={(e) => setForm({ ...form, specification: e.target.value })}
+        />
+      </div>
+      <div>
         <label className="label">Description (optional)</label>
         <textarea
           className="input"
@@ -179,6 +194,7 @@ function StockForm({
 }
 
 export default function Stock() {
+  const navigate = useNavigate();
   const [items, setItems] = useState<StockItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -202,7 +218,8 @@ export default function Stock() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [search]);
 
-  async function handleDelete(item: StockItem) {
+  async function handleDelete(item: StockItem, e: React.MouseEvent) {
+    e.stopPropagation();
     if (!window.confirm(`Delete "${item.name}" (${item.code})? This cannot be undone.`)) return;
     try {
       await api.del(`/stock/${item.id}`);
@@ -217,7 +234,7 @@ export default function Stock() {
     <div>
       <PageHeader
         title="Stock"
-        subtitle="Spinning machinery parts on hand — search by code, or by name and size."
+        subtitle="Spinning machinery parts on hand — search by code, or by name and size. Click an item to see its history."
         action={
           <button className="btn-primary" onClick={() => setModal('add')}>
             <Plus size={16} /> Add item
@@ -235,51 +252,59 @@ export default function Stock() {
           ) : (
             <div className="overflow-x-auto">
               <table className="table-shell">
-              <thead>
-                <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Size</th>
-                  <th>Unit</th>
-                  <th className="text-right">Quantity</th>
-                  <th className="text-right">Purchase rate</th>
-                  <th className="text-right">Sale rate</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item) => {
-                  const low = item.quantity <= (item.low_stock_threshold ?? 5);
-                  return (
-                    <tr key={item.id}>
-                      <td className="data-num">{item.code}</td>
-                      <td className="font-medium">{item.name}</td>
-                      <td className="data-num">{item.size || '—'}</td>
-                      <td>{item.unit}</td>
-                      <td className="data-num text-right">
-                        {item.quantity}
-                        {low && (
-                          <span className="ml-2">
-                            <Badge tone="danger">Low</Badge>
-                          </span>
-                        )}
-                      </td>
-                      <td className="data-num text-right">{money(item.purchase_rate)}</td>
-                      <td className="data-num text-right">{item.sale_rate != null ? money(item.sale_rate) : '—'}</td>
-                      <td className="text-right">
-                        <button className="btn-ghost px-2" onClick={() => setModal(item)}>
-                          <Pencil size={15} />
-                        </button>
-                        <button className="btn-ghost px-2 hover:text-danger" onClick={() => handleDelete(item)}>
-                          <Trash2 size={15} />
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-              </div>
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Name</th>
+                    <th>Size</th>
+                    <th>Unit</th>
+                    <th className="text-right">Quantity</th>
+                    <th className="text-right">Purchase rate</th>
+                    <th className="text-right">Sale rate</th>
+                    <th>Added on</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item) => {
+                    const low = item.quantity <= (item.low_stock_threshold ?? 5);
+                    return (
+                      <tr key={item.id} className="cursor-pointer" onClick={() => navigate(`/stock/${item.id}`)}>
+                        <td className="data-num">{item.code}</td>
+                        <td className="font-medium">{item.name}</td>
+                        <td className="data-num">{item.size || '—'}</td>
+                        <td>{item.unit}</td>
+                        <td className="data-num text-right">
+                          {item.quantity}
+                          {low && (
+                            <span className="ml-2">
+                              <Badge tone="danger">Low</Badge>
+                            </span>
+                          )}
+                        </td>
+                        <td className="data-num text-right">{money(item.purchase_rate)}</td>
+                        <td className="data-num text-right">{item.sale_rate != null ? money(item.sale_rate) : '—'}</td>
+                        <td className="text-ink-muted">{formatDate(item.created_at)}</td>
+                        <td className="text-right">
+                          <button
+                            className="btn-ghost px-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setModal(item);
+                            }}
+                          >
+                            <Pencil size={15} />
+                          </button>
+                          <button className="btn-ghost px-2 hover:text-danger" onClick={(e) => handleDelete(item, e)}>
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </div>
       </div>

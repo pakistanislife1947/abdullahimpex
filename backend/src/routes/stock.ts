@@ -15,6 +15,7 @@ const stockSchema = z.object({
   purchase_rate: z.number().nonnegative().default(0),
   sale_rate: z.number().nonnegative().optional().nullable(),
   description: z.string().trim().optional().nullable(),
+  specification: z.string().trim().optional().nullable(),
   low_stock_threshold: z.number().nonnegative().optional(),
 });
 
@@ -43,6 +44,48 @@ router.get(
   asyncRoute(async (_req, res) => {
     const code = await nextStockCode();
     res.json({ code });
+  })
+);
+
+router.get(
+  '/:id/history',
+  asyncRoute(async (req, res) => {
+    const [purchaseRes, saleRes] = await Promise.all([
+      supabaseAdmin
+        .from('purchase_items')
+        .select('quantity, rate, amount, purchases(purchase_date, created_at, suppliers(name))')
+        .eq('stock_id', req.params.id),
+      supabaseAdmin
+        .from('sale_items')
+        .select('quantity, rate, amount, sales(sale_date, created_at, customers(name))')
+        .eq('stock_id', req.params.id),
+    ]);
+
+    if (purchaseRes.error) throw purchaseRes.error;
+    if (saleRes.error) throw saleRes.error;
+
+    const movements = [
+      ...(purchaseRes.data ?? []).map((p: any) => ({
+        type: 'in' as const,
+        date: p.purchases?.purchase_date,
+        recorded_at: p.purchases?.created_at,
+        party: p.purchases?.suppliers?.name ?? null,
+        quantity: p.quantity,
+        rate: p.rate,
+        amount: p.amount,
+      })),
+      ...(saleRes.data ?? []).map((s: any) => ({
+        type: 'out' as const,
+        date: s.sales?.sale_date,
+        recorded_at: s.sales?.created_at,
+        party: s.sales?.customers?.name ?? null,
+        quantity: s.quantity,
+        rate: s.rate,
+        amount: s.amount,
+      })),
+    ].sort((a, b) => new Date(b.recorded_at ?? b.date).getTime() - new Date(a.recorded_at ?? a.date).getTime());
+
+    res.json({ data: movements });
   })
 );
 

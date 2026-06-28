@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { Navigate } from 'react-router-dom';
+import { ShieldCheck } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 function CrescentMark({ className }: { className?: string }) {
@@ -18,7 +19,7 @@ function CrescentMark({ className }: { className?: string }) {
 // photo/stock imagery (keeps things lightweight and licence-free).
 function ThreadPattern() {
   return (
-    <svg className="absolute inset-0 h-full w-full text-white/[0.05]" preserveAspectRatio="xMidYMid slice">
+    <svg className="absolute inset-0 h-full w-full text-white/[0.06]" preserveAspectRatio="xMidYMid slice">
       <defs>
         <pattern id="bobbin" width="120" height="120" patternUnits="userSpaceOnUse">
           <circle cx="60" cy="60" r="34" fill="none" stroke="currentColor" strokeWidth="1.4" />
@@ -61,28 +62,51 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
-      <div className="relative flex flex-col justify-between overflow-hidden bg-ink px-8 py-10 text-white lg:w-1/2 lg:px-12 lg:py-12">
+    <div className="flex min-h-screen flex-col bg-canvas lg:flex-row">
+      {/* Branding panel */}
+      <div
+        className="relative flex flex-col justify-between overflow-hidden px-8 py-10 text-white lg:w-[55%] lg:px-14 lg:py-14"
+        style={{ background: 'radial-gradient(120% 140% at 15% 10%, #1c1b19 0%, #121110 55%, #0a0a09 100%)' }}
+      >
         <ThreadPattern />
-        <CrescentMark className="pointer-events-none absolute -bottom-24 -left-20 h-[420px] w-[420px] text-white/[0.06]" />
-        <CrescentMark className="pointer-events-none absolute -top-16 right-0 h-64 w-64 text-white/[0.05]" />
-        <div className="relative z-10">
-          <p className="font-display text-2xl font-bold">M Riaz Trading</p>
-          <p className="mt-1 text-sm text-white/50">Spinning machinery parts &amp; trading</p>
+        <CrescentMark className="pointer-events-none absolute -bottom-24 -left-20 h-[460px] w-[460px] text-white/[0.07]" />
+        <CrescentMark className="pointer-events-none absolute -top-20 right-[-4rem] h-72 w-72 text-white/[0.05]" />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <span className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 bg-white/5">
+            <CrescentMark className="h-5 w-5 text-accent" />
+          </span>
+          <div>
+            <p className="font-display text-xl font-bold leading-none">M Riaz Trading</p>
+            <p className="mt-0.5 text-[11px] uppercase tracking-[0.18em] text-white/40">Inventory &amp; Billing Platform</p>
+          </div>
         </div>
-        <div className="relative z-10 mt-10 max-w-sm lg:mt-0">
-          <p className="font-display text-2xl font-semibold leading-snug lg:text-3xl">
-            Stock, sales, and billing — in one place, for both your companies.
+
+        <div className="relative z-10 mt-12 max-w-md lg:mt-0">
+          <p className="font-display text-3xl font-semibold leading-snug tracking-tight lg:text-[2.4rem]">
+            Stock, sales, and billing —<br className="hidden lg:block" /> one system, two companies.
           </p>
-          <p className="mt-4 text-sm text-white/50">
+          <p className="mt-5 text-sm leading-relaxed text-white/45">
             Main Bazar, Nishatabad, Near Nishat Mills Ltd, Faisalabad.
           </p>
+          <div className="mt-8 flex flex-wrap gap-2">
+            {['Real-time stock', 'Dual-company invoicing', 'Encrypted access'].map((tag) => (
+              <span
+                key={tag}
+                className="rounded-full border border-white/10 bg-white/[0.04] px-3 py-1 text-[11px] font-medium text-white/55"
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      <div className="flex w-full flex-1 items-center justify-center bg-surface px-6 py-12 lg:w-1/2">
-        <div className="w-full max-w-sm">
-          <h1 className="font-display text-2xl font-bold">Sign in</h1>
+      {/* Form panel */}
+      <div className="flex w-full flex-1 items-center justify-center px-6 py-12 lg:w-[45%]">
+        <div className="w-full max-w-sm rounded-xl border border-line bg-surface p-8 shadow-pop">
+          <h1 className="font-display text-2xl font-bold text-ink">Sign in</h1>
           <p className="mt-1 text-sm text-ink-muted">Admin access only.</p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-4">
@@ -112,6 +136,11 @@ export default function Login() {
               {submitting ? 'Signing in…' : 'Sign in'}
             </button>
           </form>
+
+          <div className="mt-7 flex items-center justify-center gap-1.5 text-xs text-ink-faint">
+            <ShieldCheck size={13} />
+            Your data is encrypted and only accessible to signed-in admins.
+          </div>
         </div>
       </div>
     </div>

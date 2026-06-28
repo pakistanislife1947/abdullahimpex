@@ -4,13 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        ink: '#0A0A0A',
+        ink: '#121110',
         'ink-muted': '#5C5C5C',
         'ink-faint': '#8C8C8C',
-        line: '#E5E5E5',
-        'line-strong': '#D0D0D0',
+        line: '#E7E2D9',
+        'line-strong': '#D8D1C4',
         surface: '#FFFFFF',
-        canvas: '#F7F5F2',
+        canvas: '#F2EDE4',
         accent: {
           DEFAULT: '#1B8FA8',
           dark: '#156D82',

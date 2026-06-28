@@ -24,7 +24,9 @@ async function addStockSheet(wb: ExcelJS.Workbook) {
     { header: 'Quantity', key: 'quantity', width: 12 },
     { header: 'Purchase Rate', key: 'purchase_rate', width: 14 },
     { header: 'Sale Rate', key: 'sale_rate', width: 12 },
+    { header: 'Specification', key: 'specification', width: 30 },
     { header: 'Description', key: 'description', width: 30 },
+    { header: 'Added on', key: 'created_at', width: 16 },
   ];
   (data ?? []).forEach((r) => ws.addRow(r));
   styleHeader(ws);
