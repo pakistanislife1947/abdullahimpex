@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { supabaseAdmin } from '../supabaseAdmin';
 import { asyncRoute, ApiError } from '../middleware/error';
 import { nextStockCode } from '../lib/codeGen';
+import { AuthedRequest } from '../middleware/auth';
 
 const router = Router();
 
@@ -50,7 +51,7 @@ router.get(
 router.get(
   '/:id/history',
   asyncRoute(async (req, res) => {
-    const [purchaseRes, saleRes] = await Promise.all([
+    const [purchaseRes, saleRes, adjustmentRes] = await Promise.all([
       supabaseAdmin
         .from('purchase_items')
         .select('quantity, rate, amount, purchases(purchase_date, created_at, suppliers(name))')
@@ -59,10 +60,15 @@ router.get(
         .from('sale_items')
         .select('quantity, rate, amount, sales(sale_date, created_at, customers(name))')
         .eq('stock_id', req.params.id),
+      supabaseAdmin
+        .from('stock_adjustments')
+        .select('change_type, delta, resulting_quantity, note, created_at')
+        .eq('stock_id', req.params.id),
     ]);
 
     if (purchaseRes.error) throw purchaseRes.error;
     if (saleRes.error) throw saleRes.error;
+    if (adjustmentRes.error) throw adjustmentRes.error;
 
     const movements = [
       ...(purchaseRes.data ?? []).map((p: any) => ({
@@ -82,6 +88,17 @@ router.get(
         quantity: s.quantity,
         rate: s.rate,
         amount: s.amount,
+      })),
+      ...(adjustmentRes.data ?? []).map((a: any) => ({
+        type: a.change_type as 'initial' | 'adjustment', // 'initial' or 'adjustment'
+        date: a.created_at,
+        recorded_at: a.created_at,
+        party: null,
+        quantity: a.delta,
+        rate: null,
+        amount: null,
+        note: a.note,
+        resulting_quantity: a.resulting_quantity,
       })),
     ].sort((a, b) => new Date(b.recorded_at ?? b.date).getTime() - new Date(a.recorded_at ?? a.date).getTime());
 
@@ -104,7 +121,7 @@ router.get(
 
 router.post(
   '/',
-  asyncRoute(async (req, res) => {
+  asyncRoute(async (req: AuthedRequest, res) => {
     const body = stockSchema.parse(req.body);
     const code = body.code && body.code.length > 0 ? body.code : await nextStockCode();
 
@@ -118,14 +135,32 @@ router.post(
       if (error.code === '23505') throw new ApiError(409, `Item code "${code}" already exists.`);
       throw error;
     }
+
+    // Log the starting quantity so it shows up in this item's history too.
+    await supabaseAdmin.from('stock_adjustments').insert({
+      stock_id: data.id,
+      change_type: 'initial',
+      delta: data.quantity,
+      resulting_quantity: data.quantity,
+      note: 'Initial stock added',
+      created_by: req.user?.id ?? null,
+    });
+
     res.status(201).json({ data });
   })
 );
 
 router.put(
   '/:id',
-  asyncRoute(async (req, res) => {
+  asyncRoute(async (req: AuthedRequest, res) => {
     const body = stockSchema.partial().parse(req.body);
+
+    // Snapshot the quantity before updating, so we can log how much it
+    // changed by — this is what shows up as a +/- entry in the item's history.
+    const before = await supabaseAdmin.from('stock').select('quantity').eq('id', req.params.id).single();
+    if (before.error) throw new ApiError(404, 'Stock item not found.');
+    const previousQuantity = Number(before.data.quantity);
+
     const { data, error } = await supabaseAdmin
       .from('stock')
       .update({ ...body, updated_at: new Date().toISOString() })
@@ -137,6 +172,20 @@ router.put(
       if (error.code === '23505') throw new ApiError(409, 'That item code is already in use.');
       throw error;
     }
+
+    const newQuantity = Number(data.quantity);
+    const delta = newQuantity - previousQuantity;
+    if (body.quantity !== undefined && delta !== 0) {
+      await supabaseAdmin.from('stock_adjustments').insert({
+        stock_id: data.id,
+        change_type: 'adjustment',
+        delta,
+        resulting_quantity: newQuantity,
+        note: 'Manual quantity adjustment',
+        created_by: req.user?.id ?? null,
+      });
+    }
+
     res.json({ data });
   })
 );

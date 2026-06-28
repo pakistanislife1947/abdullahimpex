@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
-import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { ArrowLeft, ArrowDownToLine, ArrowUpFromLine, Sparkles, SlidersHorizontal } from 'lucide-react';
 import { api, ApiClientError } from '../lib/api';
 import { money, formatDate } from '../lib/format';
 import { PageHeader, Badge, EmptyState } from '../components/ui';
@@ -22,13 +22,15 @@ interface StockItem {
 }
 
 interface Movement {
-  type: 'in' | 'out';
+  type: 'in' | 'out' | 'initial' | 'adjustment';
   date: string;
   recorded_at: string;
   party: string | null;
   quantity: number;
-  rate: number;
-  amount: number;
+  rate: number | null;
+  amount: number | null;
+  note?: string;
+  resulting_quantity?: number;
 }
 
 export default function StockDetail() {
@@ -137,23 +139,36 @@ export default function StockDetail() {
                     <tr key={idx}>
                       <td>{formatDate(m.date)}</td>
                       <td>
-                        {m.type === 'in' ? (
+                        {m.type === 'in' && (
                           <span className="flex items-center gap-1.5 text-success">
                             <ArrowDownToLine size={13} /> Purchase in
                           </span>
-                        ) : (
+                        )}
+                        {m.type === 'out' && (
                           <span className="flex items-center gap-1.5 text-danger">
                             <ArrowUpFromLine size={13} /> Sale out
                           </span>
                         )}
+                        {m.type === 'initial' && (
+                          <span className="flex items-center gap-1.5 text-accent-dark">
+                            <Sparkles size={13} /> Initial stock
+                          </span>
+                        )}
+                        {m.type === 'adjustment' && (
+                          <span className="flex items-center gap-1.5 text-ink-muted">
+                            <SlidersHorizontal size={13} /> Manual adjustment
+                          </span>
+                        )}
                       </td>
-                      <td>{m.party ?? '—'}</td>
+                      <td>{m.party ?? (m.note ?? '—')}</td>
                       <td className="data-num text-right">
-                        {m.type === 'in' ? '+' : '-'}
-                        {m.quantity}
+                        {m.type === 'in' && `+${m.quantity}`}
+                        {m.type === 'out' && `-${m.quantity}`}
+                        {(m.type === 'initial' || m.type === 'adjustment') &&
+                          (m.quantity > 0 ? `+${m.quantity}` : `${m.quantity}`)}
                       </td>
-                      <td className="data-num text-right">{money(m.rate)}</td>
-                      <td className="data-num text-right">{money(m.amount)}</td>
+                      <td className="data-num text-right">{m.rate != null ? money(m.rate) : '—'}</td>
+                      <td className="data-num text-right">{m.amount != null ? money(m.amount) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
