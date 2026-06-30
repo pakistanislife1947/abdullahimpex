@@ -52,6 +52,16 @@ const styles = StyleSheet.create({
   },
   footerCol: { flexDirection: 'row', alignItems: 'center', gap: 4, maxWidth: '32%' },
   footerText: { fontSize: 8 },
+  poweredBy: {
+    position: 'absolute',
+    bottom: 10,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 7,
+    color: '#A3A3A3',
+    letterSpacing: 0.4,
+  },
 });
 
 function AbdullahImpexMark({ color }: { color: string }) {
@@ -92,6 +102,7 @@ interface InvoiceData {
     phone: string | null;
     phone2: string | null;
     email: string | null;
+    logo_url?: string | null;
   };
   customers?: {
     name: string;
@@ -116,7 +127,9 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceData }) {
       <Page size="A4" style={styles.page}>
         <View style={styles.headerRow}>
           <View style={styles.logoBox}>
-            {isMRiaz ? (
+            {invoice.companies.logo_url ? (
+              <Image src={invoice.companies.logo_url} style={styles.logoImg} />
+            ) : isMRiaz ? (
               <Image src={mriazLogoDataUri} style={styles.logoImg} />
             ) : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -210,6 +223,10 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceData }) {
             <Text style={styles.footerText}>{invoice.companies.address}</Text>
           </View>
         </View>
+
+        <Text style={styles.poweredBy} fixed>
+          Powered by Quantum Solutions Group
+        </Text>
       </Page>
     </Document>
   );

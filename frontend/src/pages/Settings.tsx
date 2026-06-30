@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Download, User, KeyRound } from 'lucide-react';
+import { Download, User, KeyRound, Upload } from 'lucide-react';
 import { api, ApiClientError } from '../lib/api';
 import { supabase } from '../lib/supabaseClient';
 import { triggerBlobDownload } from '../lib/format';
@@ -16,6 +16,7 @@ interface Company {
   phone2: string | null;
   email: string | null;
   is_default: boolean;
+  logo_url: string | null;
 }
 
 const MODULES = [
@@ -31,6 +32,7 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
   const [form, setForm] = useState(company);
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -54,18 +56,69 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
     }
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow re-selecting the same file later
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error('Logo must be smaller than 2MB.');
+      return;
+    }
+    const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
+    if (!allowed.includes(file.type)) {
+      toast.error('Please upload a PNG, JPG, WEBP, or SVG image.');
+      return;
+    }
+
+    setUploadingLogo(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      await api.post(`/companies/${company.id}/logo`, { dataUrl });
+      toast.success('Logo updated.');
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : 'Could not upload logo.');
+    } finally {
+      setUploadingLogo(false);
+    }
+  }
+
   return (
     <div className="card p-5">
       <div className="flex items-center justify-between">
-        <div>
-          <p className="font-display text-sm font-bold">{company.name}</p>
-          {company.is_default && <p className="text-xs text-ink-faint">Default for invoices</p>}
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border border-line bg-canvas">
+            {company.logo_url ? (
+              <img src={company.logo_url} alt={`${company.name} logo`} className="h-full w-full object-contain" />
+            ) : (
+              <span className="font-display text-lg font-bold text-ink-faint">{company.name.charAt(0)}</span>
+            )}
+          </div>
+          <div>
+            <p className="font-display text-sm font-bold">{company.name}</p>
+            {company.is_default && <p className="text-xs text-ink-faint">Default for invoices</p>}
+          </div>
         </div>
         {!editing && (
           <button className="btn-secondary" onClick={() => setEditing(true)}>
             Edit
           </button>
         )}
+      </div>
+
+      <div className="mt-4">
+        <label className="btn-secondary inline-flex cursor-pointer">
+          <Upload size={14} />
+          {uploadingLogo ? 'Uploading…' : company.logo_url ? 'Replace logo' : 'Upload logo'}
+          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+        </label>
+        <span className="ml-2 text-xs text-ink-faint">PNG, JPG, WEBP or SVG, up to 2MB. Used on this company's invoices.</span>
       </div>
 
       {editing ? (

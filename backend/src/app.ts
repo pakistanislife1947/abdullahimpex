@@ -42,7 +42,7 @@ app.use(
   })
 );
 
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json({ limit: '4mb' }));
 
 // Generic rate limit on the whole API to blunt brute-force / abuse attempts.
 app.use(

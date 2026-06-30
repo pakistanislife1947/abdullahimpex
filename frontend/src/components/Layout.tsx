@@ -72,6 +72,9 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
           <LogOut size={17} />
           Sign out
         </button>
+        <p className="mt-3 px-3 text-center text-[10px] uppercase tracking-[0.16em] text-white/25">
+          Powered by Quantum Solutions Group
+        </p>
       </div>
     </>
   );

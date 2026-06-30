@@ -141,6 +141,10 @@ export default function Login() {
             <ShieldCheck size={13} />
             Your data is encrypted and only accessible to signed-in admins.
           </div>
+
+          <p className="mt-6 text-center text-[10px] uppercase tracking-[0.16em] text-ink-faint/70">
+            Powered by Quantum Solutions Group
+          </p>
         </div>
       </div>
     </div>
