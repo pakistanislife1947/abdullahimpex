@@ -62,6 +62,7 @@ const styles = StyleSheet.create({
     color: '#A3A3A3',
     letterSpacing: 0.4,
   },
+  letterheadImg: { width: '100%', marginBottom: 12, objectFit: 'contain' },
 });
 
 function AbdullahImpexMark({ color }: { color: string }) {
@@ -103,6 +104,7 @@ interface InvoiceData {
     phone2: string | null;
     email: string | null;
     logo_url?: string | null;
+    invoice_letterhead_url?: string | null;
   };
   customers?: {
     name: string;
@@ -125,30 +127,36 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceData }) {
   return (
     <Document>
       <Page size="A4" style={styles.page}>
-        <View style={styles.headerRow}>
-          <View style={styles.logoBox}>
-            {invoice.companies.logo_url ? (
-              <Image src={invoice.companies.logo_url} style={styles.logoImg} />
-            ) : isMRiaz ? (
-              <Image src={mriazLogoDataUri} style={styles.logoImg} />
-            ) : (
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                <AbdullahImpexMark color={accent} />
-                <View>
-                  <Text style={{ fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>Abdullah</Text>
-                  <Text style={{ fontSize: 16, fontWeight: 700, color: accent }}>Impex</Text>
-                </View>
+        {invoice.companies.invoice_letterhead_url ? (
+          <Image src={invoice.companies.invoice_letterhead_url} style={styles.letterheadImg} />
+        ) : (
+          <>
+            <View style={styles.headerRow}>
+              <View style={styles.logoBox}>
+                {invoice.companies.logo_url ? (
+                  <Image src={invoice.companies.logo_url} style={styles.logoImg} />
+                ) : isMRiaz ? (
+                  <Image src={mriazLogoDataUri} style={styles.logoImg} />
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <AbdullahImpexMark color={accent} />
+                    <View>
+                      <Text style={{ fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>Abdullah</Text>
+                      <Text style={{ fontSize: 16, fontWeight: 700, color: accent }}>Impex</Text>
+                    </View>
+                  </View>
+                )}
               </View>
-            )}
-          </View>
-          <View style={styles.titleBox}>
-            <Text style={[styles.title, { color: accent }]}>SALES TAX INVOICE</Text>
-            {invoice.companies.ntn ? <Text style={styles.ntn}>NTN : {invoice.companies.ntn}</Text> : null}
-            {invoice.companies.strn ? <Text style={styles.ntn}>S.T Reg # : {invoice.companies.strn}</Text> : null}
-          </View>
-        </View>
+              <View style={styles.titleBox}>
+                <Text style={[styles.title, { color: accent }]}>SALES TAX INVOICE</Text>
+                {invoice.companies.ntn ? <Text style={styles.ntn}>NTN : {invoice.companies.ntn}</Text> : null}
+                {invoice.companies.strn ? <Text style={styles.ntn}>S.T Reg # : {invoice.companies.strn}</Text> : null}
+              </View>
+            </View>
 
-        <View style={[styles.divider, { backgroundColor: accent }]} />
+            <View style={[styles.divider, { backgroundColor: accent }]} />
+          </>
+        )}
 
         <View style={styles.metaRow}>
           <View style={{ maxWidth: '60%' }}>
@@ -234,4 +242,120 @@ function InvoiceDocument({ invoice }: { invoice: InvoiceData }) {
 
 export async function renderInvoicePdf(invoice: InvoiceData): Promise<Buffer> {
   return renderToBuffer(<InvoiceDocument invoice={invoice} />);
+}
+
+// =====================================================================
+// Monthly ledger — a running statement of a customer's or supplier's
+// activity within a date range, with a starting balance and a running
+// total after each line, ending in a closing balance. Printable A4.
+// =====================================================================
+
+const ledgerStyles = StyleSheet.create({
+  page: { padding: 36, fontSize: 9, fontFamily: 'Helvetica', color: '#1A1A1A' },
+  title: { fontSize: 16, fontWeight: 700 },
+  subtitle: { fontSize: 10, marginTop: 4, color: '#5C5C5C' },
+  metaRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 16, marginBottom: 14 },
+  metaLine: { fontSize: 9, marginTop: 2 },
+  table: { borderWidth: 1, borderColor: '#D5D5D5' },
+  headerRow: { flexDirection: 'row', backgroundColor: '#121110' },
+  th: { padding: 6, fontSize: 8, fontWeight: 700, color: '#fff' },
+  row: { flexDirection: 'row', borderTopWidth: 1, borderColor: '#E4E4E4' },
+  rowAlt: { backgroundColor: '#FAF8F4' },
+  td: { padding: 6, fontSize: 8.5 },
+  colDate: { width: '12%' },
+  colType: { width: '14%' },
+  colDesc: { width: '34%' },
+  colDebit: { width: '13%', textAlign: 'right' },
+  colCredit: { width: '13%', textAlign: 'right' },
+  colBalance: { width: '14%', textAlign: 'right' },
+  totalsRow: { flexDirection: 'row', backgroundColor: '#F2EDE4', borderTopWidth: 1.5, borderColor: '#121110' },
+  poweredBy: {
+    position: 'absolute',
+    bottom: 20,
+    left: 0,
+    right: 0,
+    textAlign: 'center',
+    fontSize: 7,
+    color: '#A3A3A3',
+    letterSpacing: 0.4,
+  },
+});
+
+export interface LedgerEntry {
+  date: string;
+  type: string; // 'Sale', 'Purchase', 'Invoice'
+  description: string;
+  debit: number; // increases what the party owes us (sale) or what we owe them decreases
+  credit: number;
+}
+
+export interface LedgerData {
+  partyName: string;
+  partyType: 'Customer' | 'Supplier';
+  periodStart: string;
+  periodEnd: string;
+  openingBalance: number;
+  entries: LedgerEntry[];
+}
+
+function LedgerDocument({ ledger }: { ledger: LedgerData }) {
+  let running = ledger.openingBalance;
+  const rows = ledger.entries.map((e) => {
+    running = running + e.debit - e.credit;
+    return { ...e, balance: running };
+  });
+  const totalDebit = ledger.entries.reduce((s, e) => s + e.debit, 0);
+  const totalCredit = ledger.entries.reduce((s, e) => s + e.credit, 0);
+
+  return (
+    <Document>
+      <Page size="A4" style={ledgerStyles.page}>
+        <Text style={ledgerStyles.title}>Monthly Ledger — {ledger.partyName}</Text>
+        <Text style={ledgerStyles.subtitle}>
+          {ledger.partyType} statement · {dayjs(ledger.periodStart).format('D MMM YYYY')} to{' '}
+          {dayjs(ledger.periodEnd).format('D MMM YYYY')}
+        </Text>
+
+        <View style={ledgerStyles.metaRow}>
+          <Text style={ledgerStyles.metaLine}>Opening balance: Rs. {money(ledger.openingBalance)}</Text>
+          <Text style={ledgerStyles.metaLine}>Closing balance: Rs. {money(running)}</Text>
+        </View>
+
+        <View style={ledgerStyles.table}>
+          <View style={ledgerStyles.headerRow}>
+            <Text style={[ledgerStyles.th, ledgerStyles.colDate]}>DATE</Text>
+            <Text style={[ledgerStyles.th, ledgerStyles.colType]}>TYPE</Text>
+            <Text style={[ledgerStyles.th, ledgerStyles.colDesc]}>DESCRIPTION</Text>
+            <Text style={[ledgerStyles.th, ledgerStyles.colDebit]}>DEBIT</Text>
+            <Text style={[ledgerStyles.th, ledgerStyles.colCredit]}>CREDIT</Text>
+            <Text style={[ledgerStyles.th, ledgerStyles.colBalance]}>BALANCE</Text>
+          </View>
+          {rows.map((r, idx) => (
+            <View style={[ledgerStyles.row, idx % 2 === 1 ? ledgerStyles.rowAlt : {}]} key={idx}>
+              <Text style={[ledgerStyles.td, ledgerStyles.colDate]}>{dayjs(r.date).format('D MMM')}</Text>
+              <Text style={[ledgerStyles.td, ledgerStyles.colType]}>{r.type}</Text>
+              <Text style={[ledgerStyles.td, ledgerStyles.colDesc]}>{r.description}</Text>
+              <Text style={[ledgerStyles.td, ledgerStyles.colDebit]}>{r.debit ? money(r.debit) : '-'}</Text>
+              <Text style={[ledgerStyles.td, ledgerStyles.colCredit]}>{r.credit ? money(r.credit) : '-'}</Text>
+              <Text style={[ledgerStyles.td, ledgerStyles.colBalance]}>{money(r.balance)}</Text>
+            </View>
+          ))}
+          <View style={ledgerStyles.totalsRow}>
+            <Text style={[ledgerStyles.td, { width: '60%', fontWeight: 700 }]}>Totals</Text>
+            <Text style={[ledgerStyles.td, ledgerStyles.colDebit, { fontWeight: 700 }]}>{money(totalDebit)}</Text>
+            <Text style={[ledgerStyles.td, ledgerStyles.colCredit, { fontWeight: 700 }]}>{money(totalCredit)}</Text>
+            <Text style={[ledgerStyles.td, ledgerStyles.colBalance, { fontWeight: 700 }]}>{money(running)}</Text>
+          </View>
+        </View>
+
+        <Text style={ledgerStyles.poweredBy} fixed>
+          Powered by Quantum Solutions Group
+        </Text>
+      </Page>
+    </Document>
+  );
+}
+
+export async function renderLedgerPdf(ledger: LedgerData): Promise<Buffer> {
+  return renderToBuffer(<LedgerDocument ledger={ledger} />);
 }

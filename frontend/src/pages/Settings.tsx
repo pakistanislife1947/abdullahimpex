@@ -17,6 +17,7 @@ interface Company {
   email: string | null;
   is_default: boolean;
   logo_url: string | null;
+  invoice_letterhead_url: string | null;
 }
 
 const MODULES = [
@@ -33,6 +34,7 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
   const [saving, setSaving] = useState(false);
   const [editing, setEditing] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
+  const [uploadingLetterhead, setUploadingLetterhead] = useState(false);
 
   async function handleSave() {
     setSaving(true);
@@ -56,13 +58,13 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
     }
   }
 
-  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>, kind: 'logo' | 'letterhead') {
     const file = e.target.files?.[0];
     e.target.value = ''; // allow re-selecting the same file later
     if (!file) return;
 
     if (file.size > 2 * 1024 * 1024) {
-      toast.error('Logo must be smaller than 2MB.');
+      toast.error('Image must be smaller than 2MB.');
       return;
     }
     const allowed = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml'];
@@ -71,7 +73,8 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
       return;
     }
 
-    setUploadingLogo(true);
+    const setUploading = kind === 'logo' ? setUploadingLogo : setUploadingLetterhead;
+    setUploading(true);
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -79,13 +82,24 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
         reader.onerror = reject;
         reader.readAsDataURL(file);
       });
-      await api.post(`/companies/${company.id}/logo`, { dataUrl });
-      toast.success('Logo updated.');
+      await api.post(`/companies/${company.id}/${kind}`, { dataUrl });
+      toast.success(kind === 'logo' ? 'Logo updated.' : 'Invoice design updated — new invoices will use it.');
       onSaved();
     } catch (err) {
-      toast.error(err instanceof ApiClientError ? err.message : 'Could not upload logo.');
+      toast.error(err instanceof ApiClientError ? err.message : 'Could not upload image.');
     } finally {
-      setUploadingLogo(false);
+      setUploading(false);
+    }
+  }
+
+  async function handleRemoveLetterhead() {
+    if (!window.confirm('Remove the custom invoice design? New invoices will go back to the default layout.')) return;
+    try {
+      await api.del(`/companies/${company.id}/letterhead`);
+      toast.success('Custom invoice design removed.');
+      onSaved();
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : 'Could not remove it.');
     }
   }
 
@@ -112,13 +126,53 @@ function CompanyCard({ company, onSaved }: { company: Company; onSaved: () => vo
         )}
       </div>
 
-      <div className="mt-4">
-        <label className="btn-secondary inline-flex cursor-pointer">
+      <div className="mt-4 flex flex-col gap-2 border-t border-line pt-4">
+        <label className="btn-secondary inline-flex w-fit cursor-pointer">
           <Upload size={14} />
           {uploadingLogo ? 'Uploading…' : company.logo_url ? 'Replace logo' : 'Upload logo'}
-          <input type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" className="hidden" onChange={handleLogoUpload} disabled={uploadingLogo} />
+          <input
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/svg+xml"
+            className="hidden"
+            onChange={(e) => handleImageUpload(e, 'logo')}
+            disabled={uploadingLogo}
+          />
         </label>
-        <span className="ml-2 text-xs text-ink-faint">PNG, JPG, WEBP or SVG, up to 2MB. Used on this company's invoices.</span>
+        <span className="text-xs text-ink-faint">PNG, JPG, WEBP or SVG, up to 2MB. Used as this company's mark on invoices.</span>
+      </div>
+
+      <div className="mt-4 border-t border-line pt-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-ink-muted">Custom invoice design</p>
+        <p className="mt-1 text-xs text-ink-faint">
+          Upload your own invoice header/letterhead design (e.g. exported from Word or Canva) — it will be placed at
+          the top of every invoice for this company exactly as uploaded, with the item table and totals printed
+          below it automatically.
+        </p>
+        {company.invoice_letterhead_url && (
+          <img
+            src={company.invoice_letterhead_url}
+            alt="Custom invoice letterhead preview"
+            className="mt-3 max-h-28 rounded border border-line object-contain"
+          />
+        )}
+        <div className="mt-3 flex flex-wrap gap-2">
+          <label className="btn-secondary inline-flex w-fit cursor-pointer">
+            <Upload size={14} />
+            {uploadingLetterhead ? 'Uploading…' : company.invoice_letterhead_url ? 'Replace design' : 'Upload design'}
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp,image/svg+xml"
+              className="hidden"
+              onChange={(e) => handleImageUpload(e, 'letterhead')}
+              disabled={uploadingLetterhead}
+            />
+          </label>
+          {company.invoice_letterhead_url && (
+            <button type="button" className="btn-ghost hover:text-danger" onClick={handleRemoveLetterhead}>
+              Remove, use default layout
+            </button>
+          )}
+        </div>
       </div>
 
       {editing ? (

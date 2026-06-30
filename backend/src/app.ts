@@ -17,6 +17,7 @@ import companiesRoutes from './routes/companies';
 import dashboardRoutes from './routes/dashboard';
 import exportRoutes from './routes/export';
 import meRoutes from './routes/me';
+import ledgerRoutes from './routes/ledger';
 
 const app = express();
 
@@ -76,6 +77,7 @@ app.use('/companies', companiesRoutes);
 app.use('/dashboard', dashboardRoutes);
 app.use('/export', exportRoutes);
 app.use('/me', meRoutes);
+app.use('/ledger', ledgerRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

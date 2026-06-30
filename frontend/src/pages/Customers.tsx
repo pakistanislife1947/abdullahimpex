@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import toast from 'react-hot-toast';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Truck } from 'lucide-react';
 import { api, ApiClientError } from '../lib/api';
 import { PageHeader, SearchInput, EmptyState } from '../components/ui';
 import Modal from '../components/Modal';
@@ -14,6 +14,7 @@ interface Customer {
   address: string | null;
   ntn: string | null;
   strn: string | null;
+  linked_supplier_id: string | null;
 }
 
 function CustomerForm({
@@ -133,6 +134,16 @@ export default function Customers() {
     }
   }
 
+  async function handleAlsoSupplier(c: Customer) {
+    try {
+      const res = await api.post<{ data: { id: string }; alreadyLinked: boolean }>(`/customers/${c.id}/also-supplier`, {});
+      toast.success(res.alreadyLinked ? `${c.name} is already linked to a supplier record.` : `${c.name} added as a supplier too.`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof ApiClientError ? err.message : 'Could not link as supplier.');
+    }
+  }
+
   return (
     <div>
       <PageHeader
@@ -171,6 +182,17 @@ export default function Customers() {
                     <td className="data-num">{c.phone || '—'}</td>
                     <td className="data-num">{c.ntn || '—'}</td>
                     <td className="text-right">
+                      {c.linked_supplier_id ? (
+                        <span className="badge bg-accent-tint text-accent-dark">Also a supplier</span>
+                      ) : (
+                        <button
+                          className="btn-ghost px-2 text-xs"
+                          onClick={() => handleAlsoSupplier(c)}
+                          title="This customer is also a supplier"
+                        >
+                          <Truck size={14} /> Also a supplier
+                        </button>
+                      )}
                       <button className="btn-ghost px-2" onClick={() => setModal(c)}>
                         <Pencil size={15} />
                       </button>

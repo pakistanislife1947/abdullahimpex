@@ -29,6 +29,28 @@ const ALLOWED_TYPES: Record<string, string> = {
 };
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2MB
 
+async function uploadCompanyImage(companyId: string, dataUrl: string, kind: 'logo' | 'letterhead') {
+  const match = dataUrl.match(/^data:([\w/+.-]+);base64,(.+)$/);
+  if (!match) throw new ApiError(400, 'Invalid image data.');
+  const [, mimeType, base64] = match;
+
+  const ext = ALLOWED_TYPES[mimeType];
+  if (!ext) throw new ApiError(400, 'Please upload a PNG, JPG, WEBP, or SVG image.');
+
+  const buffer = Buffer.from(base64, 'base64');
+  if (buffer.byteLength > MAX_LOGO_BYTES) throw new ApiError(400, 'Image must be smaller than 2MB.');
+
+  const path = `${companyId}/${kind}-${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabaseAdmin.storage
+    .from('branding')
+    .upload(path, buffer, { contentType: mimeType, upsert: true });
+
+  if (uploadError) throw new ApiError(500, 'Could not upload the image. Please try again.');
+
+  const { data: publicUrlData } = supabaseAdmin.storage.from('branding').getPublicUrl(path);
+  return publicUrlData.publicUrl;
+}
+
 router.get(
   '/',
   asyncRoute(async (_req, res) => {
@@ -61,33 +83,52 @@ router.post(
   '/:id/logo',
   asyncRoute(async (req, res) => {
     const { dataUrl } = logoSchema.parse(req.body);
-
-    const match = dataUrl.match(/^data:([\w/+.-]+);base64,(.+)$/);
-    if (!match) throw new ApiError(400, 'Invalid image data.');
-    const [, mimeType, base64] = match;
-
-    const ext = ALLOWED_TYPES[mimeType];
-    if (!ext) throw new ApiError(400, 'Please upload a PNG, JPG, WEBP, or SVG image.');
-
-    const buffer = Buffer.from(base64, 'base64');
-    if (buffer.byteLength > MAX_LOGO_BYTES) throw new ApiError(400, 'Logo must be smaller than 2MB.');
-
-    const path = `${req.params.id}/logo-${Date.now()}.${ext}`;
-    const { error: uploadError } = await supabaseAdmin.storage
-      .from('branding')
-      .upload(path, buffer, { contentType: mimeType, upsert: true });
-
-    if (uploadError) throw new ApiError(500, 'Could not upload the logo. Please try again.');
-
-    const { data: publicUrlData } = supabaseAdmin.storage.from('branding').getPublicUrl(path);
+    const url = await uploadCompanyImage(req.params.id, dataUrl, 'logo');
 
     const { data, error } = await supabaseAdmin
       .from('companies')
-      .update({ logo_url: publicUrlData.publicUrl, updated_at: new Date().toISOString() })
+      .update({ logo_url: url, updated_at: new Date().toISOString() })
       .eq('id', req.params.id)
       .select()
       .single();
 
+    if (error) throw error;
+    res.json({ data });
+  })
+);
+
+// POST /companies/:id/letterhead — upload/replace a custom invoice
+// letterhead design. When set, this image is placed at the top of this
+// company's invoice PDFs instead of the built-in generated header.
+router.post(
+  '/:id/letterhead',
+  asyncRoute(async (req, res) => {
+    const { dataUrl } = logoSchema.parse(req.body);
+    const url = await uploadCompanyImage(req.params.id, dataUrl, 'letterhead');
+
+    const { data, error } = await supabaseAdmin
+      .from('companies')
+      .update({ invoice_letterhead_url: url, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    res.json({ data });
+  })
+);
+
+// DELETE /companies/:id/letterhead — remove the custom letterhead, reverting
+// to the built-in generated header.
+router.delete(
+  '/:id/letterhead',
+  asyncRoute(async (req, res) => {
+    const { data, error } = await supabaseAdmin
+      .from('companies')
+      .update({ invoice_letterhead_url: null, updated_at: new Date().toISOString() })
+      .eq('id', req.params.id)
+      .select()
+      .single();
     if (error) throw error;
     res.json({ data });
   })

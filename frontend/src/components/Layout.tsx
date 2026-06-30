@@ -8,6 +8,7 @@ import {
   FileText,
   Truck,
   Users,
+  BookOpenText,
   Settings as SettingsIcon,
   LogOut,
   Menu,
@@ -23,6 +24,7 @@ const NAV = [
   { to: '/invoices', label: 'Invoices', icon: FileText },
   { to: '/suppliers', label: 'Suppliers', icon: Truck },
   { to: '/customers', label: 'Customers', icon: Users },
+  { to: '/ledger', label: 'Ledger', icon: BookOpenText },
   { to: '/settings', label: 'Settings', icon: SettingsIcon },
 ];
 
